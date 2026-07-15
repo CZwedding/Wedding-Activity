@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#650711" />
+  <title>天堂 or 地獄禮物</title>
+
+  <style>
+    :root {
+      --bg-top: #8b0d1d;
+      --bg-bottom: #4b030b;
+      --white: #ffffff;
+      --black: #050505;
+      --button-text: #171717;
+      --button-shadow: rgba(33, 0, 4, 0.42);
+      --disabled-bg: rgba(255, 255, 255, 0.22);
+      --disabled-text: rgba(255, 255, 255, 0.55);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      min-height: 100dvh;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      color: var(--white);
+      font-family:
+        "Noto Sans TC",
+        "PingFang TC",
+        "Microsoft JhengHei",
+        Arial,
+        sans-serif;
+      background:
+        radial-gradient(circle at 50% -10%, rgba(255, 255, 255, 0.1), transparent 38%),
+        linear-gradient(155deg, var(--bg-top), var(--bg-bottom));
+    }
+
+    button {
+      font: inherit;
+    }
+
+    /* 以 16:9 投影幕為主要構圖，非 16:9 螢幕會自動置中留邊。 */
+    .game-page {
+      width: min(100vw, calc(100dvh * 16 / 9));
+      height: min(100dvh, calc(100vw * 9 / 16));
+      aspect-ratio: 16 / 9;
+      margin: auto;
+      padding:
+        clamp(34px, 4.4vw, 84px)
+        clamp(46px, 6.2vw, 120px)
+        clamp(28px, 3.8vw, 72px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .game-header {
+      margin-bottom: clamp(18px, 2.2vw, 38px);
+      text-align: center;
+    }
+
+    .game-title {
+      margin: 0;
+      font-size: clamp(25px, 2.65vw, 51px);
+      font-weight: 500;
+      line-height: 1.48;
+      letter-spacing: 0.045em;
+    }
+
+    .game-subtitle {
+      margin: clamp(7px, 0.8vw, 14px) 0 0;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: clamp(13px, 1.15vw, 22px);
+      font-weight: 350;
+      line-height: 1.55;
+      letter-spacing: 0.06em;
+    }
+
+    .button-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: clamp(8px, 0.8vw, 15px);
+    }
+
+    .choice-wrap {
+      position: relative;
+      padding: clamp(6px, 0.55vw, 10px);
+      border-radius: clamp(14px, 1.2vw, 23px);
+    }
+
+    .choice-wrap.is-highlighted::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      border: clamp(2px, 0.2vw, 4px) solid var(--white);
+      border-radius: inherit;
+      box-shadow:
+        0 0 11px rgba(255, 255, 255, 0.68),
+        0 0 25px rgba(255, 255, 255, 0.28);
+      animation: framePulse 0.9s ease-in-out infinite alternate;
+    }
+
+    .choice-button {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      min-height: clamp(72px, 8.3vw, 158px);
+      padding: clamp(12px, 1.25vw, 24px);
+      border: 0;
+      border-radius: clamp(10px, 0.8vw, 16px);
+      color: var(--button-text);
+      background: linear-gradient(145deg, #ffffff, #e9e9e9);
+      box-shadow:
+        0 clamp(6px, 0.55vw, 11px) 0 var(--button-shadow),
+        0 clamp(10px, 1vw, 20px) clamp(16px, 1.7vw, 32px) rgba(23, 0, 3, 0.25),
+        inset 0 2px 2px rgba(255, 255, 255, 0.46);
+      font-size: clamp(16px, 1.55vw, 30px);
+      font-weight: 500;
+      line-height: 1.6;
+      letter-spacing: 0.035em;
+      white-space: pre-line;
+      cursor: pointer;
+      transition:
+        transform 110ms ease,
+        box-shadow 110ms ease,
+        opacity 180ms ease,
+        background 180ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .choice-button:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+
+    .choice-button:active:not(:disabled) {
+      transform: translateY(clamp(5px, 0.45vw, 9px));
+      box-shadow:
+        0 2px 0 var(--button-shadow),
+        0 6px 12px rgba(23, 0, 3, 0.22),
+        inset 0 2px 2px rgba(255, 255, 255, 0.42);
+    }
+
+    .choice-button:focus-visible {
+      outline: 3px solid rgba(255, 255, 255, 0.75);
+      outline-offset: 5px;
+    }
+
+    .choice-button:disabled {
+      color: var(--disabled-text);
+      background: var(--disabled-bg);
+      box-shadow:
+        0 clamp(6px, 0.55vw, 11px) 0 rgba(25, 0, 3, 0.2),
+        0 clamp(10px, 1vw, 20px) clamp(16px, 1.7vw, 32px) rgba(23, 0, 3, 0.18),
+        inset 0 2px 2px rgba(255, 255, 255, 0.18);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .game-footer {
+      margin-top: clamp(16px, 1.8vw, 34px);
+      text-align: center;
+    }
+
+    .reset-button,
+    .back-button {
+      border: 1.5px solid rgba(255, 255, 255, 0.78);
+      border-radius: 999px;
+      padding:
+        clamp(9px, 0.75vw, 14px)
+        clamp(18px, 1.5vw, 30px);
+      color: var(--white);
+      background: rgba(0, 0, 0, 0.18);
+      font-size: clamp(12px, 0.92vw, 18px);
+      font-weight: 450;
+      line-height: 1.45;
+      letter-spacing: 0.07em;
+      cursor: pointer;
+      transition:
+        background 160ms ease,
+        transform 160ms ease;
+    }
+
+    .reset-button:hover,
+    .back-button:hover {
+      background: rgba(255, 255, 255, 0.14);
+      transform: translateY(-1px);
+    }
+
+    .status-text {
+      min-height: 1.35em;
+      margin: clamp(6px, 0.55vw, 10px) 0 0;
+      color: rgba(255, 255, 255, 0.58);
+      font-size: clamp(10px, 0.72vw, 14px);
+      font-weight: 400;
+    }
+
+    .result-page {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      padding:
+        clamp(38px, 5vw, 96px)
+        clamp(52px, 7vw, 134px);
+      display: grid;
+      place-items: center;
+      color: var(--white);
+      background: var(--black);
+      opacity: 0;
+      visibility: hidden;
+      transition:
+        opacity 220ms ease,
+        visibility 220ms ease;
+    }
+
+    .result-page.is-open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .result-page.is-clickable {
+      cursor: pointer;
+    }
+
+    .result-card {
+      width: min(100%, 1120px);
+      text-align: center;
+    }
+
+    .result-label {
+      margin: 0 0 clamp(18px, 2vw, 38px);
+      color: rgba(255, 255, 255, 0.42);
+      font-size: clamp(10px, 0.78vw, 15px);
+      font-weight: 350;
+      line-height: 1.5;
+      letter-spacing: 0.24em;
+    }
+
+    .reveal-lines {
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(12px, 1.3vw, 25px);
+    }
+
+    .reveal-line {
+      margin: 0;
+      color: var(--white);
+      font-size: clamp(24px, 2.55vw, 49px);
+      font-weight: 400;
+      line-height: 1.68;
+      letter-spacing: 0.035em;
+      opacity: 0;
+      transform: translateY(16px);
+      filter: blur(5px);
+    }
+
+    .reveal-line.is-visible {
+      animation: revealText 560ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .reveal-line.is-prize {
+      margin-top: clamp(9px, 1vw, 19px);
+      font-size: clamp(31px, 3.35vw, 64px);
+      font-weight: 500;
+      line-height: 1.55;
+    }
+
+    .click-hint {
+      position: fixed;
+      left: 50%;
+      bottom: max(clamp(20px, 2.2vw, 42px), env(safe-area-inset-bottom));
+      margin: 0;
+      color: rgba(255, 255, 255, 0.46);
+      font-size: clamp(10px, 0.76vw, 15px);
+      font-weight: 300;
+      line-height: 1.5;
+      letter-spacing: 0.13em;
+      transform: translateX(-50%);
+      animation: hintPulse 1.5s ease-in-out infinite alternate;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .click-hint.is-finished,
+    .back-button[hidden] {
+      display: none;
+    }
+
+    .back-button {
+      margin-top: clamp(28px, 3vw, 58px);
+      min-width: clamp(120px, 9vw, 172px);
+      color: #090909;
+      background: var(--white);
+      border-color: var(--white);
+    }
+
+    .back-button:hover {
+      background: #e8e8e8;
+    }
+
+    @keyframes framePulse {
+      from {
+        opacity: 0.68;
+        transform: scale(0.994);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1.008);
+      }
+    }
+
+    @keyframes revealText {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+        filter: blur(5px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+      }
+    }
+
+    @keyframes hintPulse {
+      from {
+        opacity: 0.32;
+      }
+
+      to {
+        opacity: 0.72;
+      }
+    }
+
+    @media (max-width: 760px) {
+      body {
+        overflow: auto;
+      }
+
+      .game-page {
+        width: 100%;
+        height: auto;
+        min-height: 100dvh;
+        aspect-ratio: auto;
+        padding: 34px 22px 30px;
+      }
+
+      .game-title {
+        font-size: clamp(25px, 7vw, 36px);
+      }
+
+      .button-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .choice-button {
+        min-height: 90px;
+        font-size: clamp(16px, 4.5vw, 21px);
+      }
+
+      .result-page {
+        padding: 44px 24px 80px;
+      }
+
+      .reveal-line {
+        font-size: clamp(21px, 6vw, 31px);
+      }
+
+      .reveal-line.is-prize {
+        font-size: clamp(27px, 7.5vw, 39px);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="game-page" id="gamePage">
+    <header class="game-header">
+      <h1 class="game-title">
+        恭喜最了解我們的你/妳<br />
+        有機會獲得天堂or地獄禮物
+      </h1>
+      <p class="game-subtitle">(應該沒有很地獄 吧)</p>
+    </header>
+
+    <section class="button-grid" id="buttonGrid" aria-label="遊戲選項"></section>
+
+    <footer class="game-footer">
+      <button class="reset-button" id="resetButton" type="button">
+        重置全部
+      </button>
+    </footer>
+  </main>
+
+  <section
+    class="result-page"
+    id="resultPage"
+    role="dialog"
+    aria-modal="true"
+    aria-label="禮物揭曉"
+  >
+    <div class="result-card">
+      <p class="result-label">CLICK TO REVEAL</p>
+      <div class="reveal-lines" id="revealLines" aria-live="polite"></div>
+      <button class="back-button" id="backButton" type="button" hidden>
+        返回
+      </button>
+    </div>
+    <p class="click-hint" id="clickHint">點擊畫面，顯示下一句</p>
+  </section>
+
+  <script>
+    /*
+      每一組：
+      buttonText = 主畫面按鈕文字
+      revealLines = 每次點擊後依序出現的句子
+      最後一句會自動套用較大的獎品文字樣式
+    */
+    const gameItems = [
+      {
+        buttonText: "爆炸性饗宴",
+        revealLines: [
+          "有些精彩發生在銀幕上，",
+          "有些精彩發生在嘴巴裡，",
+          "而且一顆接著一顆。",
+          "恭喜獲得｜一箱爆米花"
+        ]
+      },
+      {
+        buttonText: "活在自己的世界",
+        revealLines: [
+          "自私的人只活在自己的世界，",
+          "愛看電影的人，",
+          "偶爾也可以自私一點。",
+          "恭喜獲得｜藍牙耳罩"
+        ]
+      },
+      {
+        buttonText: "熱熱的港覺",
+        revealLines: [
+          "熱淚盈眶，",
+          "感動收不回去，",
+          "但眼睛的腫脹可以。",
+          "恭喜獲得｜蒸氣眼罩"
+        ]
+      },
+      {
+        buttonText: "差強人意",
+        revealLines: [
+          "說不上高級，",
+          "但配上對的地方、好的劇情，",
+          "你就擁有整個電影院。",
+          "恭喜獲得｜投影機"
+        ]
+      },
+      {
+        buttonText: "先來點刺激",
+        revealLines: [
+          "電影還沒正式開始，",
+          "氣氛可以先打開，",
+          "讓刺激從第一聲開始。",
+          "恭喜獲得｜可樂一手"
+        ]
+      },
+      {
+        buttonText: "感動的高級享受",
+        revealLines: [
+          "有些電影值得全場鼓掌，",
+          "有些電影值得放聲大哭，",
+          "有些感動則值得整包抽光。",
+          "恭喜獲得｜高級衛生紙"
+        ]
+      },
+      {
+        buttonText: "沒有比較\n沒有傷害",
+        revealLines: [
+          "跟電影院比沒有比較沒有傷害，",
+          "但在家裡看電影，",
+          "綽綽有餘。",
+          "恭喜獲得｜藍牙音響"
+        ]
+      },
+      {
+        buttonText: "賭賭賭一把愛",
+        revealLines: [
+          "按下快門以前，",
+          "沒有人知道成果好不好，",
+          "但有些回憶就是值得賭一把。",
+          "恭喜獲得｜一次性底片相機"
+        ]
+      }
+    ];
+
+    const STORAGE_KEY = "heaven-or-hell-gift-game-disabled";
+    const HIGHLIGHT_INTERVAL = 430;
+
+    const buttonGrid = document.getElementById("buttonGrid");
+    const resetButton = document.getElementById("resetButton");
+    const resultPage = document.getElementById("resultPage");
+    const revealLines = document.getElementById("revealLines");
+    const clickHint = document.getElementById("clickHint");
+    const backButton = document.getElementById("backButton");
+
+    let disabledIndexes = loadDisabledIndexes();
+    let highlightedAvailablePosition = -1;
+    let highlightTimer = null;
+    let currentSelectedIndex = null;
+    let currentRevealStep = 0;
+    let revealClickLocked = false;
+
+    function loadDisabledIndexes() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        return Array.isArray(stored)
+          ? stored.filter(index => Number.isInteger(index) && index >= 0 && index < gameItems.length)
+          : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveDisabledIndexes() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(disabledIndexes));
+      } catch (error) {
+        // 瀏覽器若限制儲存，當次遊戲仍可正常操作。
+      }
+    }
+
+    function getAvailableIndexes() {
+      return gameItems
+        .map((_, index) => index)
+        .filter(index => !disabledIndexes.includes(index));
+    }
+
+    function renderButtons() {
+      buttonGrid.innerHTML = "";
+
+      gameItems.forEach((item, index) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "choice-wrap";
+        wrapper.dataset.index = index;
+
+        const button = document.createElement("button");
+        button.className = "choice-button";
+        button.type = "button";
+        button.textContent = item.buttonText;
+        button.disabled = disabledIndexes.includes(index);
+        button.setAttribute("aria-label", item.buttonText);
+
+        button.addEventListener("click", () => openResult(index));
+
+        wrapper.appendChild(button);
+        buttonGrid.appendChild(wrapper);
+      });
+
+      restartHighlightAnimation();
+    }
+
+    function restartHighlightAnimation() {
+      clearInterval(highlightTimer);
+      removeAllHighlights();
+
+      const availableIndexes = getAvailableIndexes();
+
+      if (
+        availableIndexes.length === 0 ||
+        resultPage.classList.contains("is-open")
+      ) {
+        return;
+      }
+
+      highlightedAvailablePosition = -1;
+      moveHighlight();
+      highlightTimer = setInterval(moveHighlight, HIGHLIGHT_INTERVAL);
+    }
+
+    function moveHighlight() {
+      const availableIndexes = getAvailableIndexes();
+
+      if (availableIndexes.length === 0) {
+        clearInterval(highlightTimer);
+        removeAllHighlights();
+        return;
+      }
+
+      highlightedAvailablePosition =
+        (highlightedAvailablePosition + 1) % availableIndexes.length;
+
+      removeAllHighlights();
+
+      const targetIndex = availableIndexes[highlightedAvailablePosition];
+      const targetWrapper = buttonGrid.querySelector(
+        `.choice-wrap[data-index="${targetIndex}"]`
+      );
+
+      targetWrapper?.classList.add("is-highlighted");
+    }
+
+    function removeAllHighlights() {
+      document
+        .querySelectorAll(".choice-wrap.is-highlighted")
+        .forEach(element => element.classList.remove("is-highlighted"));
+    }
+
+    function openResult(index) {
+      if (disabledIndexes.includes(index)) {
+        return;
+      }
+
+      currentSelectedIndex = index;
+      currentRevealStep = 0;
+      revealClickLocked = false;
+
+      clearInterval(highlightTimer);
+      removeAllHighlights();
+
+      revealLines.innerHTML = "";
+      backButton.hidden = true;
+      clickHint.classList.remove("is-finished");
+      resultPage.classList.add("is-clickable");
+
+      gameItems[index].revealLines.forEach((lineText, lineIndex, lines) => {
+        const line = document.createElement("p");
+        line.className = "reveal-line";
+
+        if (lineIndex === lines.length - 1) {
+          line.classList.add("is-prize");
+        }
+
+        line.textContent = lineText;
+        revealLines.appendChild(line);
+      });
+
+      resultPage.classList.add("is-open");
+      document.body.style.overflow = "hidden";
+    }
+
+    function revealNextLine() {
+      if (
+        currentSelectedIndex === null ||
+        revealClickLocked ||
+        !resultPage.classList.contains("is-clickable")
+      ) {
+        return;
+      }
+
+      const lines = revealLines.querySelectorAll(".reveal-line");
+
+      if (currentRevealStep >= lines.length) {
+        return;
+      }
+
+      revealClickLocked = true;
+      lines[currentRevealStep].classList.add("is-visible");
+      currentRevealStep += 1;
+
+      if (currentRevealStep >= lines.length) {
+        resultPage.classList.remove("is-clickable");
+        clickHint.classList.add("is-finished");
+        backButton.hidden = false;
+
+        window.setTimeout(() => {
+          backButton.focus();
+        }, 580);
+      }
+
+      window.setTimeout(() => {
+        revealClickLocked = false;
+      }, 420);
+    }
+
+    function closeResult() {
+      if (
+        currentSelectedIndex !== null &&
+        !disabledIndexes.includes(currentSelectedIndex)
+      ) {
+        disabledIndexes.push(currentSelectedIndex);
+        disabledIndexes.sort((a, b) => a - b);
+        saveDisabledIndexes();
+      }
+
+      resultPage.classList.remove("is-open", "is-clickable");
+      clickHint.classList.add("is-finished");
+      document.body.style.overflow = "";
+      currentSelectedIndex = null;
+      currentRevealStep = 0;
+      revealLines.innerHTML = "";
+      backButton.hidden = true;
+
+      renderButtons();
+
+      const firstAvailableButton = buttonGrid.querySelector(
+        ".choice-button:not(:disabled)"
+      );
+      firstAvailableButton?.focus();
+    }
+
+    function resetGame() {
+      disabledIndexes = [];
+      currentSelectedIndex = null;
+
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (error) {
+        // 瀏覽器若限制儲存，仍可完成當次重置。
+      }
+
+      renderButtons();
+    }
+
+    resultPage.addEventListener("click", event => {
+      if (event.target.closest("#backButton")) {
+        return;
+      }
+
+      revealNextLine();
+    });
+
+    backButton.addEventListener("click", event => {
+      event.stopPropagation();
+      closeResult();
+    });
+
+    resetButton.addEventListener("click", resetGame);
+
+    document.addEventListener("keydown", event => {
+      if (!resultPage.classList.contains("is-open")) {
+        return;
+      }
+
+      if (event.key === "Escape") {
+        closeResult();
+        return;
+      }
+
+      if (
+        (event.key === "Enter" || event.key === " ") &&
+        resultPage.classList.contains("is-clickable")
+      ) {
+        event.preventDefault();
+        revealNextLine();
+      }
+    });
+
+    renderButtons();
+  </script>
+</body>
+</html>
